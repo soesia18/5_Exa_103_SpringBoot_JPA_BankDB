@@ -1,4 +1,7 @@
 package at.kaindorf.bank.database;
 
-public interface CustomerRepository extends org.springframework.data.jpa.repository.JpaRepository<at.kaindorf.bank.pojos.Customer, java.lang.Long> {
+import at.kaindorf.bank.pojos.Customer;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface CustomerRepository extends JpaRepository<Customer, Long> {
 }
