@@ -89,7 +89,7 @@
         </table>
 
         <br>
-        <span>Total balance of all accounts: € <span th:text="${customer.getTotalBalance()}"></span></span>
+        <span>Total balance of all accounts: <span th:text="${totalAmount}"></span></span>
         <div class="d-flex justify-content-center">
             <form method="GET" th:action="@{/filter}">
                 <input class="btn btn-primary" type="submit" value="Back to account overview">

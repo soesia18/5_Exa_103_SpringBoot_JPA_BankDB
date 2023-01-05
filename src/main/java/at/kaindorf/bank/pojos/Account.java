@@ -23,6 +23,9 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+/*@NamedQueries(
+        @NamedQuery(name = "Account.TotalAmount", query = "SELECT SUM(balance) FROM Account a WHERE :kundeID IN a.customerList")
+)*/
 public abstract class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

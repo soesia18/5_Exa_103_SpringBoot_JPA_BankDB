@@ -1,5 +1,6 @@
 package at.kaindorf.bank.web;
 
+import at.kaindorf.bank.database.AccountRepository;
 import at.kaindorf.bank.database.GiroAccountRepository;
 import at.kaindorf.bank.database.SavingsAccountRepository;
 import at.kaindorf.bank.pojos.Account;
@@ -14,6 +15,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
+
+import java.text.NumberFormat;
+import java.util.Optional;
 
 /**
  * <h3>Created by IntelliJ IDEA.</h3><br>
@@ -33,10 +37,14 @@ public class CustomerDetailsController {
 
     private final GiroAccountRepository giroAccountRepository;
     private final SavingsAccountRepository savingsAccountRepository;
+    private final AccountRepository accountRepository;
 
-    public CustomerDetailsController(GiroAccountRepository giroAccountRepository, SavingsAccountRepository savingsAccountRepository) {
+    private static final NumberFormat numberFormat = NumberFormat.getCurrencyInstance();
+
+    public CustomerDetailsController(GiroAccountRepository giroAccountRepository, SavingsAccountRepository savingsAccountRepository, AccountRepository accountRepository) {
         this.giroAccountRepository = giroAccountRepository;
         this.savingsAccountRepository = savingsAccountRepository;
+        this.accountRepository = accountRepository;
     }
 
     @ModelAttribute("customer")
@@ -49,52 +57,78 @@ public class CustomerDetailsController {
         return 0;
     }
 
+    @ModelAttribute("totalAmount")
+    public String totalAmount() {
+        return numberFormat.format(0);
+    }
+
     @GetMapping
     public ModelAndView showDetailCustomer(Model model, @RequestParam("radCustomer") Customer customer) {
         log.debug("GET request to /detail");
         model.addAttribute("customer", customer);
+        updateTotalBalance(model, customer);
         return new ModelAndView("customerDetailsView");
     }
 
-    @PostMapping(value = "/depositWithdraw/{id}", params = "action=-")
-    public ModelAndView deposit(@RequestParam int amount,
+    @PostMapping(value = "/depositWithdraw/{id}", params = "action=+")
+    public ModelAndView deposit(Model model,
+                                @RequestParam int amount,
                                 @PathVariable("id") int accountId,
                                 @SessionAttribute("customer") Customer customer) {
         log.debug("POST request to /detail/depositWithdraw");
 
         Account account = getAccountFromCustomer(customer, accountId);
+        account.setBalance(account.getBalance() + amount);
+        accountRepository.updateBalance(account.getBalance(), account.getAccountId());
 
-        account.setBalance(account.getBalance() - amount);
 
-        if (account instanceof GiroAccount) {
+        updateTotalBalance(model, customer);
+
+        /*if (account instanceof GiroAccount) {
             giroAccountRepository.updateBalance(account.getBalance(), account.getAccountId());
         } else if (account instanceof SavingsAccount) {
             savingsAccountRepository.updateBalance(account.getBalance(), account.getAccountId());
-        }
+        }*/
 
         return new ModelAndView("customerDetailsView");
     }
 
-    @PostMapping(value = "/depositWithdraw/{id}", params = "action=+")
-    public ModelAndView withdraw(@RequestParam int amount,
+    @PostMapping(value = "/depositWithdraw/{id}", params = "action=-")
+    public ModelAndView withdraw(Model model,
+                                 @RequestParam int amount,
                                  @PathVariable("id") int accountId,
                                  @SessionAttribute("customer") Customer customer) {
         log.debug("POST request to /detail/depositWithdraw");
 
         Account account = getAccountFromCustomer(customer, accountId);
+        account.setBalance(account.getBalance() - amount);
+        accountRepository.updateBalance(account.getBalance(), account.getAccountId());
 
-        account.setBalance(account.getBalance() + amount);
 
-        if (account instanceof GiroAccount) {
+        updateTotalBalance(model, customer);
+
+        /*if (account instanceof GiroAccount) {
             giroAccountRepository.updateBalance(account.getBalance(), account.getAccountId());
         } else if (account instanceof SavingsAccount) {
             savingsAccountRepository.updateBalance(account.getBalance(), account.getAccountId());
-        }
+        }*/
 
         return new ModelAndView("customerDetailsView");
     }
 
-    private Account getAccountFromCustomer (Customer customer, int id) {
+    private void updateTotalBalance(Model model, Customer customer) {
+        model
+                .addAttribute("totalAmount",
+                        numberFormat
+                                .format(accountRepository
+                                        .totalSum(customer
+                                                .getAccounts()
+                                                .stream()
+                                                .map(Account::getAccountId)
+                                                .toList())));
+    }
+
+    private Account getAccountFromCustomer(Customer customer, int id) {
         return customer.getAccounts().stream().filter(account -> account.getAccountId() == id).findFirst().get();
     }
 }
