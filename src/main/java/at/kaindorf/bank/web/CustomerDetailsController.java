@@ -13,6 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -39,8 +42,6 @@ public class CustomerDetailsController {
     private final SavingsAccountRepository savingsAccountRepository;
     private final AccountRepository accountRepository;
 
-    private static final NumberFormat numberFormat = NumberFormat.getCurrencyInstance();
-
     public CustomerDetailsController(GiroAccountRepository giroAccountRepository, SavingsAccountRepository savingsAccountRepository, AccountRepository accountRepository) {
         this.giroAccountRepository = giroAccountRepository;
         this.savingsAccountRepository = savingsAccountRepository;
@@ -59,7 +60,7 @@ public class CustomerDetailsController {
 
     @ModelAttribute("totalAmount")
     public String totalAmount() {
-        return numberFormat.format(0);
+        return Account.numberFormat.format(0);
     }
 
     @GetMapping
@@ -100,28 +101,33 @@ public class CustomerDetailsController {
                                  @SessionAttribute("customer") Customer customer) {
         log.debug("POST request to /detail/depositWithdraw");
 
+        ModelAndView modelAndView = new ModelAndView("customerDetailsView");
+
         Account account = getAccountFromCustomer(customer, accountId);
-        account.setBalance(account.getBalance() - amount);
-        accountRepository.updateBalance(account.getBalance(), account.getAccountId());
+
+        if (account instanceof GiroAccount && account.getBalance() - amount < (-((GiroAccount) account).getOverdraft())) {
+            modelAndView.addObject("GiroAccountError", "Too low balance to withdraw: Overdraft-limit: " + ((GiroAccount) account).getOverdraft());
+        } else if (account instanceof SavingsAccount && account.getBalance() - amount < 0) {
+            modelAndView.addObject("SavingsAccountError", "Too low balance to withdraw " +
+                    Account.numberFormat.format((account.getBalance() - amount)));
+        } else {
+            account.setBalance(account.getBalance() - amount);
+            accountRepository.updateBalance(account.getBalance(), account.getAccountId());
+        }
 
 
         updateTotalBalance(model, customer);
 
-        /*if (account instanceof GiroAccount) {
-            giroAccountRepository.updateBalance(account.getBalance(), account.getAccountId());
-        } else if (account instanceof SavingsAccount) {
-            savingsAccountRepository.updateBalance(account.getBalance(), account.getAccountId());
-        }*/
 
-        return new ModelAndView("customerDetailsView");
+        return modelAndView;
     }
 
     private void updateTotalBalance(Model model, Customer customer) {
         model
                 .addAttribute("totalAmount",
-                        numberFormat
+                        Account.numberFormat
                                 .format(accountRepository
-                                        .totalSum(customer
+                                        .totalBalance(customer
                                                 .getAccounts()
                                                 .stream()
                                                 .map(Account::getAccountId)

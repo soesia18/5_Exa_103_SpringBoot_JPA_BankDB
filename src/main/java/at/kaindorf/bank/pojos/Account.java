@@ -1,11 +1,9 @@
 package at.kaindorf.bank.pojos;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,10 +21,11 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-/*@NamedQueries(
-        @NamedQuery(name = "Account.TotalAmount", query = "SELECT SUM(balance) FROM Account a WHERE :kundeID IN a.customerList")
-)*/
+@ToString
+@NamedQuery(name = "Account.totalBalance",query = "SELECT SUM (a.balance) FROM Account a WHERE a.accountId IN ?1")
 public abstract class Account {
+
+    public static final NumberFormat numberFormat = NumberFormat.getCurrencyInstance();
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "account_id", nullable = false)
@@ -35,6 +34,11 @@ public abstract class Account {
     private Long accountNumber;
     private Double balance;
 
+    @ToString.Exclude
     @ManyToMany(mappedBy = "accounts")
     private List<Customer> customerList = new ArrayList<>();
+
+    public String getFormattedBalance () {
+        return numberFormat.format(balance);
+    }
 }

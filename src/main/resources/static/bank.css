@@ -1,0 +1,19 @@
+.error {
+    color: red;
+}
+
+#topDiv{
+    position:sticky;
+    top:0;
+    z-index:100;
+    background: white;
+    margin-bottom: 2%;
+}
+
+#bottomDiv {
+    position:fixed;
+    bottom:0;
+    z-index:100;
+    background: white;
+    margin-top: 2%;
+}

@@ -1,10 +1,7 @@
 package at.kaindorf.bank.pojos;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 /**
  * <h3>Created by IntelliJ IDEA.</h3><br>
@@ -20,16 +17,18 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString
 public class Address {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "address_id", nullable = false)
     private Long addressId;
 
+    @Column(length = 100)
     private String streetname;
-    @Column(name = "street_number")
+    @Column(name = "street_number", length = 10)
     private String streetNumber;
-    @Column(name = "zip_code")
+    @Column(name = "zip_code", length = 10)
     private String zipCode;
     private String city;
 

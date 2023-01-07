@@ -1,11 +1,9 @@
 package at.kaindorf.bank.pojos;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
+import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
@@ -25,13 +23,18 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @Getter
 @Setter
+@ToString
 public class Customer {
+
+    public static NumberFormat percentFormatter = NumberFormat.getPercentInstance();
     @Id
     @GeneratedValue
     @Column(name = "customer_id")
     private Long customerId;
 
+    @Column(length = 100)
     private String firstname;
+    @Column(length = 100)
     private String lastname;
     private Long customerNumber;
 
